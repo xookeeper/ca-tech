@@ -33,11 +33,20 @@ jobs:
             sudo usermod -aG docker ec2-user
             echo "Pulling Docker image..."
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app
-            echo "Stopping and removing existing Docker containers using port 80..."
-            sudo docker ps --filter "ancestor=${{ secrets.DOCKER_USERNAME }}/exceltoxml-app" --format "{{.ID}}" | xargs -r sudo docker stop | xargs -r sudo docker rm
-            sudo docker ps --filter "publish=80" --format "{{.ID}}" | xargs -r sudo docker stop | xargs -r sudo docker rm
-            echo "Running new Docker container..."
-            sudo docker run -d -p 80:3001 ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app
-            echo "Docker container started."
+            echo "Creating docker-compose.yml file..."
+            echo "version: '3.8'
+            services:
+              app:
+                image: ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app:latest
+                ports:
+                  - '80:3001'
+                environment:
+                  NODE_ENV: production
+                restart: always" > docker-compose.yml
+            echo "Stopping and removing existing Docker containers..."
+            sudo docker-compose down
+            echo "Starting new Docker containers..."
+            sudo docker-compose up -d
+            echo "Docker containers started."
             echo "Checking Docker container logs..."
-            sudo docker logs $(sudo docker ps -q --filter ancestor=${{ secrets.DOCKER_USERNAME }}/exceltoxml-app)
+            sudo docker-compose logs
