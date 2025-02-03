@@ -31,9 +31,8 @@ jobs:
           script: |
             echo "Adding ec2-user to the docker group..."
             sudo usermod -aG docker ec2-user
-            echo "Installing Docker Compose..."
-            sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-            sudo chmod +x /usr/local/bin/docker-compose
+            echo "Installing required libraries..."
+            sudo yum install -y libcrypt
             echo "Pulling Docker image..."
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app
             echo "Creating docker-compose.yml file..."
