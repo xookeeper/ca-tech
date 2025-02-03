@@ -27,9 +27,9 @@ jobs:
       - name: SSH to EC2 and deploy
         uses: appleboy/ssh-action@v0.1.5
         with:
-          host: ${{ secrets.EC2_IP }}
+          host: ${{ secrets.EC2_HOST }}
           username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "Pulling Docker image..."
             docker pull ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app
