@@ -32,7 +32,6 @@ jobs:
             echo "Adding ec2-user to the docker group..."
             sudo usermod -aG docker ec2-user
             echo "Installing required libraries..."
-            sudo yum install -y libcrypt
             echo "Pulling Docker image..."
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app
             echo "Creating docker-compose.yml file..."
