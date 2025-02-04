@@ -14,31 +14,30 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: your-docker-username
+          password: your-docker-password
 
       - name: Build and push Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app .
-          docker push ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app
+          docker build -t your-docker-username/exceltoxml-app .
+          docker push your-docker-username/exceltoxml-app
 
       - name: SSH to EC2 and deploy
         uses: appleboy/ssh-action@v0.1.5
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: your-ec2-host
           username: ec2-user
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: your-ssh-private-key
           script: |
             echo "Adding ec2-user to the docker group..."
             sudo usermod -aG docker ec2-user
-            echo "Installing required libraries..."
             echo "Pulling Docker image..."
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app
+            sudo docker pull your-docker-username/exceltoxml-app
             echo "Creating docker-compose.yml file..."
             echo "version: '3.8'
             services:
               app:
-                image: ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app:latest
+                image: your-docker-username/exceltoxml-app:latest
                 ports:
                   - '80:3001'
                 environment:
