@@ -9,8 +9,17 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3001;
 
+
+// Configure CORS to allow requests from specific origins
+const corsOptions = {
+  origin: [process.env.CORS_ORIGIN, process.env.DNS_SERVER_URL],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
 // Enable CORS for requests from the specified origin
-app.use(cors({ origin: process.env.CORS_ORIGIN }));
+app.use(cors(corsOptions));
 
 // Middleware to parse JSON bodies
 app.use(bodyParser.json());
