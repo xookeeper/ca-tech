@@ -83,7 +83,7 @@
               const email = document.getElementById('loginEmail').value;
               const password = document.getElementById('loginPassword').value;
 
-              // Call the backend API to check if the user's email exists and is not deleted
+              // This line of code is changed
               fetch(`${config.serverUrl}/api/users/checkRole`, {
                 method: 'POST',
                 headers: {
