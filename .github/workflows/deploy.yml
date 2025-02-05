@@ -29,15 +29,13 @@ jobs:
           username: ec2-user
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "Adding ec2-user to the docker group..."
-            sudo usermod -aG docker ec2-user
             echo "Pulling Docker image..."
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app
             echo "Stopping and removing existing Docker containers using port 80..."
             sudo docker ps --filter "ancestor=${{ secrets.DOCKER_USERNAME }}/exceltoxml-app" --format "{{.ID}}" | xargs -r sudo docker stop | xargs -r sudo docker rm
             sudo docker ps --filter "publish=80" --format "{{.ID}}" | xargs -r sudo docker stop | xargs -r sudo docker rm
-            echo "Running new Docker container..."
-            sudo docker run -d -p 80:3001 ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app
+            echo "Running new Docker container with environment variables..."
+            sudo docker run --env-file /home/ec2-user/.env -d -p 80:3001 ${{ secrets.DOCKER_USERNAME }}/exceltoxml-app
             echo "Docker container started."
             echo "Checking Docker container logs..."
             sudo docker logs $(sudo docker ps -q --filter ancestor=${{ secrets.DOCKER_USERNAME }}/exceltoxml-app)
