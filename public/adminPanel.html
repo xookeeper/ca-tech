@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel</title>
+  <script src="/config.js"></script>
   <!-- Load Firebase SDKs from CDN -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
@@ -12,184 +13,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
-  <script type="module">
-    import config from './config.js';
-
-    // Firebase Configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyCheTKSioQvT0uemYqxCYr1hJxG8yDisCU",
-      authDomain: "general-login-b4932.firebaseapp.com",
-      projectId: "general-login-b4932",
-      storageBucket: "general-login-b4932.firebaseapp.com",
-      messagingSenderId: "503291448237",
-      appId: "1:503291448237:web:557d012d3a614860a46f24",
-      measurementId: "G-573SKVP492"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-
-    let currentAdminId = null;
-
-    // Check if the user is logged in and fetch user details
-    auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        const storedUser = JSON.parse(localStorage.getItem('user'));
-        if (storedUser && storedUser.role === 'ADMIN') {
-          currentAdminId = storedUser.uid;
-          document.getElementById('adminPanel').style.display = 'block';
-          loadUsers();
-        } else {
-          window.location.href = 'converter.html'; // Redirect non-admin users to converter.html
-        }
-      } else {
-        window.location.href = 'login.html'; // Redirect to login if not logged in
-      }
-    });
-
-    // Load Users
-    async function loadUsers() {
-      const usersTableBody = document.getElementById('usersTable').getElementsByTagName('tbody')[0];
-      usersTableBody.innerHTML = ''; // Clear existing users
-
-      // Call the API to get the list of users added by the current admin
-      console.log('Fetching users from API...');
-      fetch(`${config.serverUrl}/api/users/${currentAdminId}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
-        .then(users => {
-          console.log('Users fetched:', users);
-          users.forEach(user => {
-            const row = usersTableBody.insertRow();
-            row.insertCell(0).textContent = user.name;
-            row.insertCell(1).textContent = user.email;
-            row.insertCell(2).textContent = user.role;
-            const actionsCell = row.insertCell(3);
-            actionsCell.innerHTML = `
-              <button onclick="editUser('${user.uid}', '${user.name}', '${user.email}', '${user.role}')">Edit</button>
-              <button onclick="deleteUser('${user.uid}')">Delete</button>
-            `;
-          });
-        })
-        .catch(error => {
-          console.error('Error fetching users:', error);
-          alert('Error fetching users.');
-        });
-    }
-
-    // Add User
-    document.getElementById('addUserBtn').addEventListener('click', async () => {
-      const name = document.getElementById('addName').value;
-      const email = document.getElementById('addEmail').value;
-      const password = document.getElementById('addPassword').value;
-
-      try {
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-        await user.updateProfile({ displayName: name });
-        console.log('User created:', user.uid, name, email, currentAdminId); // Debugging log
-
-        // Call the API to store user details in MySQL with default role as USER
-        fetch(`${config.serverUrl}/api/users/register`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            uid: user.uid,
-            name: name,
-            email: email,
-            adminId: currentAdminId,
-            role: 'USER' // Default role
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log('User added to MySQL:', data); // Debugging log
-          alert('User added successfully');
-          loadUsers(); // Reload users list
-        })
-        .catch(error => {
-          console.error('Error adding user to MySQL:', error); // Debugging log
-          alert('Error adding user to MySQL');
-        });
-      } catch (error) {
-        console.error('Error adding user:', error); // Debugging log
-        alert(error.message);
-      }
-    });
-
-    // Edit User
-    window.editUser = (uid, name, email, role) => {
-      document.getElementById('addName').value = name;
-      document.getElementById('addEmail').value = email;
-      document.getElementById('addUserBtn').textContent = 'Update User';
-      document.getElementById('addUserBtn').onclick = async () => {
-        const updatedName = document.getElementById('addName').value;
-        const updatedEmail = document.getElementById('addEmail').value;
-
-        // Call the API to update user details in MySQL
-        fetch(`${config.serverUrl}/api/users/updateUser`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            uid: uid,
-            name: updatedName,
-            email: updatedEmail,
-            adminId: currentAdminId,
-            role: role // Keep the existing role
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log('User updated in MySQL:', data); // Debugging log
-          alert('User updated successfully');
-          loadUsers(); // Reload users list
-          document.getElementById('addUserBtn').textContent = 'Add User';
-          document.getElementById('addUserBtn').onclick = addUser;
-        })
-        .catch(error => {
-          console.error('Error updating user in MySQL:', error); // Debugging log
-          alert('Error updating user in MySQL');
-        });
-      };
-    };
-
-    // Delete User
-    window.deleteUser = (uid) => {
-      if (confirm('Are you sure you want to delete this user?')) {
-        // Call the API to soft delete user in MySQL
-        fetch(`${config.serverUrl}/api/users/softDeleteUser/${uid}`, {
-          method: 'PUT'
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log('User soft deleted in MySQL:', data); // Debugging log
-          alert('User deleted successfully');
-          loadUsers(); // Reload users list
-        })
-        .catch(error => {
-          console.error('Error soft deleting user in MySQL:', error); // Debugging log
-          alert('Error soft deleting user in MySQL');
-        });
-      }
-    };
-
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      auth.signOut().then(() => {
-        localStorage.removeItem('user');
-        window.location.href = 'login.html';
-      });
-    });
-  </script>
 </head>
 <body>
   <!-- Sticky Header -->
@@ -256,6 +79,186 @@
     </div>
   </footer>
 
+  <script>
+    // Load the config.js file
+    fetch('/config.js')
+      .then(response => response.text())
+      .then(text => {
+        // Evaluate the config.js file to get the config object
+        eval(text);
+
+        // Firebase Configuration
+        const firebaseConfig = config.firebaseConfig;
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        let currentAdminId = null;
+
+        // Check if the user is logged in and fetch user details
+        auth.onAuthStateChanged(async (user) => {
+          if (user) {
+            const storedUser = JSON.parse(localStorage.getItem('user'));
+            if (storedUser && storedUser.role === 'ADMIN') {
+              currentAdminId = storedUser.uid;
+              document.getElementById('adminPanel').style.display = 'block';
+              loadUsers();
+            } else {
+              window.location.href = 'converter.html'; // Redirect non-admin users to converter.html
+            }
+          } else {
+            window.location.href = 'login.html'; // Redirect to login if not logged in
+          }
+        });
+
+        // Load Users
+        async function loadUsers() {
+          const usersTableBody = document.getElementById('usersTable').getElementsByTagName('tbody')[0];
+          usersTableBody.innerHTML = ''; // Clear existing users
+
+          // Call the API to get the list of users added by the current admin
+          console.log('Fetching users from API...');
+          fetch(`${config.serverUrl}/api/users/${currentAdminId}`)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.json();
+            })
+            .then(users => {
+              console.log('Users fetched:', users);
+              users.forEach(user => {
+                const row = usersTableBody.insertRow();
+                row.insertCell(0).textContent = user.name;
+                row.insertCell(1).textContent = user.email;
+                row.insertCell(2).textContent = user.role;
+                const actionsCell = row.insertCell(3);
+                actionsCell.innerHTML = `
+                  <button onclick="editUser('${user.uid}', '${user.name}', '${user.email}', '${user.role}')">Edit</button>
+                  <button onclick="deleteUser('${user.uid}')">Delete</button>
+                `;
+              });
+            })
+            .catch(error => {
+              console.error('Error fetching users:', error);
+              alert('Error fetching users.');
+            });
+        }
+
+        // Add User
+        document.getElementById('addUserBtn').addEventListener('click', async () => {
+          const name = document.getElementById('addName').value;
+          const email = document.getElementById('addEmail').value;
+          const password = document.getElementById('addPassword').value;
+
+          try {
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+            await user.updateProfile({ displayName: name });
+            console.log('User created:', user.uid, name, email, currentAdminId); // Debugging log
+
+            // Call the API to store user details in MySQL with default role as USER
+            fetch(`${config.serverUrl}/api/users/register`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                uid: user.uid,
+                name: name,
+                email: email,
+                adminId: currentAdminId,
+                role: 'USER' // Default role
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log('User added to MySQL:', data); // Debugging log
+              alert('User added successfully');
+              loadUsers(); // Reload users list
+            })
+            .catch(error => {
+              console.error('Error adding user to MySQL:', error); // Debugging log
+              alert('Error adding user to MySQL');
+            });
+          } catch (error) {
+            console.error('Error adding user:', error); // Debugging log
+            alert(error.message);
+          }
+        });
+
+        // Edit User
+        window.editUser = (uid, name, email, role) => {
+          document.getElementById('addName').value = name;
+          document.getElementById('addEmail').value = email;
+          document.getElementById('addUserBtn').textContent = 'Update User';
+          document.getElementById('addUserBtn').onclick = async () => {
+            const updatedName = document.getElementById('addName').value;
+            const updatedEmail = document.getElementById('addEmail').value;
+
+            // Call the API to update user details in MySQL
+            fetch(`${config.serverUrl}/api/users/updateUser`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                uid: uid,
+                name: updatedName,
+                email: updatedEmail,
+                adminId: currentAdminId,
+                role: role // Keep the existing role
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log('User updated in MySQL:', data); // Debugging log
+              alert('User updated successfully');
+              loadUsers(); // Reload users list
+              document.getElementById('addUserBtn').textContent = 'Add User';
+              document.getElementById('addUserBtn').onclick = addUser;
+            })
+            .catch(error => {
+              console.error('Error updating user in MySQL:', error); // Debugging log
+              alert('Error updating user in MySQL');
+            });
+          };
+        };
+
+        // Delete User
+        window.deleteUser = (uid) => {
+          if (confirm('Are you sure you want to delete this user?')) {
+            // Call the API to soft delete user in MySQL
+            fetch(`${config.serverUrl}/api/users/softDeleteUser/${uid}`, {
+              method: 'PUT'
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log('User soft deleted in MySQL:', data); // Debugging log
+              alert('User deleted successfully');
+              loadUsers(); // Reload users list
+            })
+            .catch(error => {
+              console.error('Error soft deleting user in MySQL:', error); // Debugging log
+              alert('Error soft deleting user in MySQL');
+            });
+          }
+        };
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+          auth.signOut().then(() => {
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+          });
+        });
+      })
+      .catch(error => {
+        console.error('Error loading config.js:', error);
+        alert('Error loading configuration.');
+      });
+  </script>
   <script>
     // Smooth scrolling for navigation links
     document.querySelectorAll('.nav-links a').forEach(link => {

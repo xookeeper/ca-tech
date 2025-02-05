@@ -1,6 +1,6 @@
 const config = {
-    serverUrl: 'http://127.0.0.1:3001',
-    frontendServerUrl: 'http://127.0.0.1:3001'
+    serverUrl: process.env.SERVER_URL,
+    frontendServerUrl: process.env.SERVER_URL
   };
   
   export default config;

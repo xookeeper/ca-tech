@@ -46,6 +46,7 @@ app.get('/adminPanel', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'adminPanel.html'));
 });
 
+// Serve config.js with environment variables
 app.get('/config.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.send(`
@@ -61,7 +62,6 @@ app.get('/config.js', (req, res) => {
         measurementId: '${process.env.FIREBASE_MEASUREMENT_ID}'
       }
     };
-    export default config;
   `);
 });
 
