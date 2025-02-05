@@ -1,16 +1,18 @@
+require('dotenv').config();
+
 const express = require('express');
 const bodyParser = require('body-parser');
-const userRoutes = require('../routes/userRoutes')
+const userRoutes = require('../routes/userRoutes');
 const path = require('path');
 const cors = require('cors');
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
 
-app.use(cors({ origin: 'http://localhost:3001' }));
+// Enable CORS for requests from the specified origin
+app.use(cors({ origin: process.env.CORS_ORIGIN }));
 
 // Middleware to parse JSON bodies
-// deploy 1 1 1
 app.use(bodyParser.json());
 
 // Serve static files from the "public" directory
@@ -62,8 +64,6 @@ app.get('/config.js', (req, res) => {
     export default config;
   `);
 });
-
-
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
