@@ -12,7 +12,7 @@ const port = process.env.PORT || 3001;
 
 // Configure CORS to allow requests from specific origins
 const corsOptions = {
-  origin: ['https://sanjaykutheandco.com', 'https://www.sanjaykutheandco.com', process.env.CORS_ORIGIN, process.env.DNS_SERVER_URL],
+  origin: ['https://sanjaykutheandco.com', 'https://www.sanjaykutheandco.com'],
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204
